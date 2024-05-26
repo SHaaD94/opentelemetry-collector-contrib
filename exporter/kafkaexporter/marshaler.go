@@ -39,7 +39,7 @@ type LogsMarshaler interface {
 	Encoding() string
 }
 
-// creates TracesMarshaller based on the provided config
+// creates TracesMarshaler based on the provided config
 func createTracesMarshaler(config Config) (TracesMarshaler, error) {
 	encoding := config.Encoding
 	partitionTracesByID := config.PartitionTracesByID
@@ -67,7 +67,7 @@ func createTracesMarshaler(config Config) (TracesMarshaler, error) {
 }
 
 // creates MetricsMarshaler based on the provided config
-func createMetricMarshaller(config Config) (MetricsMarshaler, error) {
+func createMetricMarshaler(config Config) (MetricsMarshaler, error) {
 	encoding := config.Encoding
 	partitionMetricsByResources := config.PartitionMetricsByResourceAttributes
 	switch encoding {

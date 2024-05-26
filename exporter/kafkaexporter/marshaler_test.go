@@ -47,7 +47,7 @@ func TestDefaultMetricsMarshalers(t *testing.T) {
 	}
 	for _, e := range expectedEncodings {
 		t.Run(e, func(t *testing.T) {
-			m, err := createMetricMarshaller(Config{
+			m, err := createMetricMarshaler(Config{
 				Encoding: e,
 			})
 			require.Nil(t, err)
@@ -117,14 +117,14 @@ func TestOTLPMetricsJsonMarshaling(t *testing.T) {
 			r1.Attributes().PutStr("service.name", "my_service_name")
 			r1.CopyTo(metric.ResourceMetrics().AppendEmpty().Resource())
 
-			marshaller, err := createMetricMarshaller(
+			marshaler, err := createMetricMarshaler(
 				Config{
 					Encoding:                             "otlp_json",
 					PartitionMetricsByResourceAttributes: tt.partitionByResources,
 				})
 			require.Nil(t, err)
 
-			msgs, err := marshaller.Marshal(metric, "KafkaTopicX")
+			msgs, err := marshaler.Marshal(metric, "KafkaTopicX")
 			require.NoError(t, err, "Must have marshaled the data without error")
 			require.Len(t, msgs, len(tt.messagePartitionKeys), "Number of messages must be %d, but was %d", len(tt.messagePartitionKeys), len(msgs))
 
@@ -178,14 +178,14 @@ func TestOTLPLogsJsonMarshaling(t *testing.T) {
 			r1.Attributes().PutStr("service.name", "my_service_name")
 			r1.CopyTo(log.ResourceLogs().AppendEmpty().Resource())
 
-			marshaller, err := createLogMarshaler(
+			marshaler, err := createLogMarshaler(
 				Config{
 					Encoding:                          "otlp_json",
 					PartitionLogsByResourceAttributes: tt.partitionByResources,
 				})
 			require.Nil(t, err)
 
-			msgs, err := marshaller.Marshal(log, "KafkaTopicX")
+			msgs, err := marshaler.Marshal(log, "KafkaTopicX")
 			require.NoError(t, err, "Must have marshaled the data without error")
 			require.Len(t, msgs, len(tt.messagePartitionKeys), "Number of messages must be %d, but was %d", len(tt.messagePartitionKeys), len(msgs))
 
@@ -461,7 +461,7 @@ func TestOTLPTracesJsonMarshaling(t *testing.T) {
 			Encoding:            test.encoding,
 			PartitionTracesByID: test.partitionTracesByID,
 		})
-		require.Nil(t, err, fmt.Sprintf("Must have %s marshaller", test.encoding))
+		require.Nil(t, err, fmt.Sprintf("Must have %s marshaler", test.encoding))
 
 		msg, err := marshaler.Marshal(traces, t.Name())
 		require.NoError(t, err, "Must have marshaled the data without error")

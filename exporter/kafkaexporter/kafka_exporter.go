@@ -205,7 +205,7 @@ func newSaramaProducer(config Config) (sarama.SyncProducer, error) {
 }
 
 func newMetricsExporter(config Config, set exporter.CreateSettings) (*kafkaMetricsProducer, error) {
-	marshaler, err := createMetricMarshaller(config)
+	marshaler, err := createMetricMarshaler(config)
 	if err != nil {
 		return nil, err
 	}
