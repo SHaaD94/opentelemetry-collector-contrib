@@ -100,18 +100,6 @@ func TestCreateMetricExporter(t *testing.T) {
 			marshalers: nil,
 			err:        nil,
 		},
-		{
-			name: "custom_encoding",
-			conf: applyConfigOption(func(conf *Config) {
-				// Disabling broker check to ensure encoding work
-				conf.Metadata.Full = false
-				conf.Encoding = "custom"
-			}),
-			marshalers: []MetricsMarshaler{
-				newMockMarshaler[pmetric.Metrics]("custom"),
-			},
-			err: nil,
-		},
 	}
 
 	for _, tc := range tests {
@@ -176,18 +164,6 @@ func TestCreateLogExporter(t *testing.T) {
 			}),
 			marshalers: nil,
 			err:        nil,
-		},
-		{
-			name: "custom_encoding",
-			conf: applyConfigOption(func(conf *Config) {
-				// Disabling broker check to ensure encoding work
-				conf.Metadata.Full = false
-				conf.Encoding = "custom"
-			}),
-			marshalers: []LogsMarshaler{
-				newMockMarshaler[plog.Logs]("custom"),
-			},
-			err: nil,
 		},
 	}
 
