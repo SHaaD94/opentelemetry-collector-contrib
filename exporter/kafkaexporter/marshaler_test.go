@@ -28,12 +28,12 @@ func TestDefaultTracesMarshalers(t *testing.T) {
 		"jaeger_proto",
 		"jaeger_json",
 	}
-	marshalers := tracesMarshalers()
-	assert.Equal(t, len(expectedEncodings), len(marshalers))
 	for _, e := range expectedEncodings {
 		t.Run(e, func(t *testing.T) {
-			m, ok := marshalers[e]
-			require.True(t, ok)
+			m, err := createTracesMarshaler(Config{
+				Encoding: e,
+			})
+			require.Nil(t, err)
 			assert.NotNil(t, m)
 		})
 	}
@@ -44,12 +44,12 @@ func TestDefaultMetricsMarshalers(t *testing.T) {
 		"otlp_proto",
 		"otlp_json",
 	}
-	marshalers := metricsMarshalers()
-	assert.Equal(t, len(expectedEncodings), len(marshalers))
 	for _, e := range expectedEncodings {
 		t.Run(e, func(t *testing.T) {
-			m, ok := marshalers[e]
-			require.True(t, ok)
+			m, err := createMetricMarshaller(Config{
+				Encoding: e,
+			})
+			require.Nil(t, err)
 			assert.NotNil(t, m)
 		})
 	}
@@ -61,12 +61,12 @@ func TestDefaultLogsMarshalers(t *testing.T) {
 		"otlp_json",
 		"raw",
 	}
-	marshalers := logsMarshalers()
-	assert.Equal(t, len(expectedEncodings), len(marshalers))
 	for _, e := range expectedEncodings {
 		t.Run(e, func(t *testing.T) {
-			m, ok := marshalers[e]
-			require.True(t, ok)
+			m, err := createLogMarshaler(Config{
+				Encoding: e,
+			})
+			require.Nil(t, err)
 			assert.NotNil(t, m)
 		})
 	}
@@ -75,17 +75,17 @@ func TestDefaultLogsMarshalers(t *testing.T) {
 func TestOTLPMetricsJsonMarshaling(t *testing.T) {
 	tests := []struct {
 		name                 string
-		keyEnabled           bool
+		partitionByResources bool
 		messagePartitionKeys []sarama.Encoder
 	}{
 		{
 			name:                 "partitioning_disabled",
-			keyEnabled:           false,
+			partitionByResources: false,
 			messagePartitionKeys: []sarama.Encoder{nil},
 		},
 		{
-			name:       "partitioning_enabled",
-			keyEnabled: true,
+			name:                 "partitioning_enabled",
+			partitionByResources: true,
 			messagePartitionKeys: []sarama.Encoder{
 				sarama.ByteEncoder{0x62, 0x7f, 0x20, 0x34, 0x85, 0x49, 0x55, 0x2e, 0xfa, 0x93, 0xae, 0xd7, 0xde, 0x91, 0xd7, 0x16},
 				sarama.ByteEncoder{0x75, 0x6b, 0xb4, 0xd6, 0xff, 0xeb, 0x92, 0x22, 0xa, 0x68, 0x65, 0x48, 0xe0, 0xd3, 0x94, 0x44},
@@ -116,16 +116,15 @@ func TestOTLPMetricsJsonMarshaling(t *testing.T) {
 			r1.Attributes().PutStr("service.name", "my_service_name")
 			r1.CopyTo(metric.ResourceMetrics().AppendEmpty().Resource())
 
-			standardMarshaler := metricsMarshalers()["otlp_json"]
-			keyableMarshaler, ok := standardMarshaler.(KeyableMetricsMarshaler)
-			require.True(t, ok, "Must be a KeyableMetricsMarshaler")
-			if tt.keyEnabled {
-				keyableMarshaler.Key()
-			}
+			marshaller, err := createMetricMarshaller(
+				Config{
+					Encoding:                             "otlp_json",
+					PartitionMetricsByResourceAttributes: tt.partitionByResources,
+				})
+			require.Nil(t, err)
 
-			msgs, err := standardMarshaler.Marshal(metric, "KafkaTopicX")
+			msgs, err := marshaller.Marshal(metric, "KafkaTopicX")
 			require.NoError(t, err, "Must have marshaled the data without error")
-
 			require.Len(t, msgs, len(tt.messagePartitionKeys), "Number of messages must be %d, but was %d", len(tt.messagePartitionKeys), len(msgs))
 
 			for i := 0; i < len(tt.messagePartitionKeys); i++ {
@@ -382,28 +381,25 @@ func TestOTLPTracesJsonMarshaling(t *testing.T) {
 
 	tests := []struct {
 		encoding            string
-		keyed               bool
+		partitionTracesById bool
 		numExpectedMessages int
 		expectedJSON        []any
 		expectedMessageKey  []sarama.Encoder
 		unmarshaled         any
 	}{
 		{encoding: "otlp_json", numExpectedMessages: 1, expectedJSON: unkeyedOtlpJSONResult, expectedMessageKey: unkeyedMessageKey, unmarshaled: map[string]any{}},
-		{encoding: "otlp_json", keyed: true, numExpectedMessages: 2, expectedJSON: keyedOtlpJSONResult, expectedMessageKey: keyedMessageKey, unmarshaled: map[string]any{}},
+		{encoding: "otlp_json", partitionTracesById: true, numExpectedMessages: 2, expectedJSON: keyedOtlpJSONResult, expectedMessageKey: keyedMessageKey, unmarshaled: map[string]any{}},
 		{encoding: "zipkin_json", numExpectedMessages: 1, expectedJSON: unkeyedZipkinJSONResult, expectedMessageKey: unkeyedMessageKey, unmarshaled: []map[string]any{}},
-		{encoding: "zipkin_json", keyed: true, numExpectedMessages: 2, expectedJSON: keyedZipkinJSONResult, expectedMessageKey: keyedMessageKey, unmarshaled: []map[string]any{}},
+		{encoding: "zipkin_json", partitionTracesById: true, numExpectedMessages: 2, expectedJSON: keyedZipkinJSONResult, expectedMessageKey: keyedMessageKey, unmarshaled: []map[string]any{}},
 	}
 
 	for _, test := range tests {
 
-		marshaler, ok := tracesMarshalers()[test.encoding]
-		require.True(t, ok, fmt.Sprintf("Must have %s marshaller", test.encoding))
-
-		if test.keyed {
-			keyableMarshaler, ok := marshaler.(KeyableTracesMarshaler)
-			require.True(t, ok, "Must be a KeyableTracesMarshaler")
-			keyableMarshaler.Key()
-		}
+		marshaler, err := createTracesMarshaler(Config{
+			Encoding:            test.encoding,
+			PartitionTracesByID: test.partitionTracesById,
+		})
+		require.Nil(t, err, fmt.Sprintf("Must have %s marshaller", test.encoding))
 
 		msg, err := marshaler.Marshal(traces, t.Name())
 		require.NoError(t, err, "Must have marshaled the data without error")

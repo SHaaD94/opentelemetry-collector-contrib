@@ -119,7 +119,7 @@ func TestCreateMetricExporter(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			f := NewFactory(withMetricsMarshalers(tc.marshalers...))
+			f := NewFactory()
 			exporter, err := f.CreateMetricsExporter(
 				context.Background(),
 				exportertest.NewNopCreateSettings(),
@@ -196,7 +196,7 @@ func TestCreateLogExporter(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			f := NewFactory(withLogsMarshalers(tc.marshalers...))
+			f := NewFactory()
 			exporter, err := f.CreateLogsExporter(
 				context.Background(),
 				exportertest.NewNopCreateSettings(),
@@ -254,18 +254,6 @@ func TestCreateTraceExporter(t *testing.T) {
 			marshalers: nil,
 			err:        nil,
 		},
-		{
-			name: "custom_encoding",
-			conf: applyConfigOption(func(conf *Config) {
-				// Disabling broker check to ensure encoding work
-				conf.Metadata.Full = false
-				conf.Encoding = "custom"
-			}),
-			marshalers: []TracesMarshaler{
-				newMockMarshaler[ptrace.Traces]("custom"),
-			},
-			err: nil,
-		},
 	}
 
 	for _, tc := range tests {
@@ -273,7 +261,7 @@ func TestCreateTraceExporter(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			f := NewFactory(withTracesMarshalers(tc.marshalers...))
+			f := NewFactory()
 			exporter, err := f.CreateTracesExporter(
 				context.Background(),
 				exportertest.NewNopCreateSettings(),
