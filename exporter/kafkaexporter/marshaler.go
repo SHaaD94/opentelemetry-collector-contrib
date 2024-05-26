@@ -69,12 +69,12 @@ func createTracesMarshaler(config Config) (TracesMarshaler, error) {
 // creates MetricsMarshaler based on the provided config
 func createMetricMarshaller(config Config) (MetricsMarshaler, error) {
 	encoding := config.Encoding
-	partitionMetricsByResoures := config.PartitionMetricsByResourceAttributes
+	partitionMetricsByResources := config.PartitionMetricsByResourceAttributes
 	switch encoding {
 	case defaultEncoding:
-		return newPdataMetricsMarshaler(&pmetric.ProtoMarshaler{}, defaultEncoding, partitionMetricsByResoures), nil
+		return newPdataMetricsMarshaler(&pmetric.ProtoMarshaler{}, defaultEncoding, partitionMetricsByResources), nil
 	case "otlp_json":
-		return newPdataMetricsMarshaler(&pmetric.JSONMarshaler{}, "otlp_json", partitionMetricsByResoures), nil
+		return newPdataMetricsMarshaler(&pmetric.JSONMarshaler{}, "otlp_json", partitionMetricsByResources), nil
 	default:
 		return nil, errUnrecognizedEncoding
 	}
