@@ -5,44 +5,14 @@ package kafkaexporter
 
 import (
 	"context"
-	"errors"
 	"net"
 	"testing"
 
-	"github.com/IBM/sarama"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/exporter/exportertest"
-	"go.opentelemetry.io/collector/pdata/plog"
-	"go.opentelemetry.io/collector/pdata/pmetric"
-	"go.opentelemetry.io/collector/pdata/ptrace"
 )
-
-// data is a simple means of allowing
-// interchangeability between the
-// different marshaller types
-type data interface {
-	ptrace.Traces | plog.Logs | pmetric.Metrics
-}
-
-type mockMarshaler[Data data] struct {
-	consume  func(d Data, topic string) ([]*sarama.ProducerMessage, error)
-	encoding string
-}
-
-func (mm *mockMarshaler[Data]) Encoding() string { return mm.encoding }
-
-func (mm *mockMarshaler[Data]) Marshal(d Data, topic string) ([]*sarama.ProducerMessage, error) {
-	if mm.consume != nil {
-		return mm.consume(d, topic)
-	}
-	return nil, errors.New("not implemented")
-}
-
-func newMockMarshaler[Data data](encoding string) *mockMarshaler[Data] {
-	return &mockMarshaler[Data]{encoding: encoding}
-}
 
 // applyConfigOption is used to modify values of the
 // the default exporter config to make it easier to
