@@ -204,7 +204,7 @@ func newSaramaProducer(config Config) (sarama.SyncProducer, error) {
 	return producer, nil
 }
 
-func newMetricsExporter(config Config, set exporter.CreateSettings) (*kafkaMetricsProducer, error) {
+func newMetricsExporter(config Config, set exporter.Settings) (*kafkaMetricsProducer, error) {
 	marshaler, err := createMetricMarshaler(config)
 	if err != nil {
 		return nil, err
@@ -223,7 +223,7 @@ func newMetricsExporter(config Config, set exporter.CreateSettings) (*kafkaMetri
 }
 
 // newTracesExporter creates Kafka exporter.
-func newTracesExporter(config Config, set exporter.CreateSettings) (*kafkaTracesProducer, error) {
+func newTracesExporter(config Config, set exporter.Settings) (*kafkaTracesProducer, error) {
 	marshaler, err := createTracesMarshaler(config)
 	if err != nil {
 		return nil, err
@@ -236,7 +236,7 @@ func newTracesExporter(config Config, set exporter.CreateSettings) (*kafkaTraces
 	}, nil
 }
 
-func newLogsExporter(config Config, set exporter.CreateSettings) (*kafkaLogsProducer, error) {
+func newLogsExporter(config Config, set exporter.Settings) (*kafkaLogsProducer, error) {
 	marshaler, err := createLogMarshaler(config)
 	if err != nil {
 		return nil, err
